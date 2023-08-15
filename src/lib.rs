@@ -1,7 +1,7 @@
 #![feature(try_blocks)]
 
 use {
-    proc_macro2::{Ident, Span, TokenStream},
+    proc_macro2::{Ident, TokenStream},
     quote::{format_ident, quote},
     std::{
         env, error, fs,
@@ -11,7 +11,7 @@ use {
         parse::{Parse, ParseStream},
         parse_macro_input,
         punctuated::Punctuated,
-        Error, Token,
+        Token,
     },
 };
 
@@ -38,7 +38,7 @@ pub fn js_impl(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
     let ident = format_ident!("__some_prefix_{unique}");
     let Input { sig, block } = parse_macro_input!(input as Input);
 
-    let ret: Result<_, Box<dyn error::Error>> = try {
+    let _: Result<_, Box<dyn error::Error>> = try {
         let path =
             env::current_dir()?.join(env::var("CARGO_PKG_NAME")?).join("template/src/_js_cache");
         let _ = fs::create_dir(&path);
@@ -53,16 +53,9 @@ pub fn js_impl(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
             )
             .to_string(),
         )?;
-
-        cache
     };
 
-    let path = match ret {
-        Err(err) => {
-            return Error::new(Span::call_site(), format!("{err}")).to_compile_error().into();
-        }
-        Ok(path) => path.display().to_string(),
-    };
+    let path = format!("/src/_js_cache/{ident}.cjs");
     let (ser, de) = (sig.iter(), sig.iter());
     quote!(
         #[wasm_bindgen(module = #path)]
